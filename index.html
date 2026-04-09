@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Travel Assistant</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:       #0f1117;
+    --surface:  #181c25;
+    --surface2: #1f2433;
+    --border:   rgba(255,255,255,0.08);
+    --text:     #e8eaf0;
+    --muted:    #6b7280;
+    --accent:   #4f8ef7;
+    --user-bg:  #1a2744;
+    --bot-bg:   #1a1e28;
+    --radius:   14px;
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  /* Header */
+  header {
+    width: 100%;
+    max-width: 760px;
+    padding: 1.25rem 1.5rem 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+  }
+  .brand { display: flex; align-items: center; gap: 10px; }
+  .brand-icon {
+    width: 34px; height: 34px; border-radius: 10px;
+    background: linear-gradient(135deg, #4f8ef7, #7c6af7);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+  }
+  .brand-name { font-size: 16px; font-weight: 500; }
+  .brand-sub  { font-size: 12px; color: var(--muted); margin-top: 1px; }
+  #clear-btn {
+    font-size: 12px; color: var(--muted); background: none;
+    border: 1px solid var(--border); border-radius: 8px;
+    padding: 5px 12px; cursor: pointer; font-family: inherit;
+    transition: all 0.15s;
+  }
+  #clear-btn:hover { border-color: rgba(255,255,255,0.2); color: var(--text); }
+
+  /* Chat window */
+  #chat-window {
+    flex: 1; overflow-y: auto; width: 100%;
+    max-width: 760px; padding: 1.5rem;
+    display: flex; flex-direction: column; gap: 1rem;
+    scroll-behavior: smooth;
+  }
+
+  /* Empty state */
+  .empty-state {
+    margin: auto; text-align: center;
+    color: var(--muted); padding: 2rem;
+  }
+  .empty-state .icon { font-size: 40px; margin-bottom: 0.75rem; }
+  .empty-state h2 { font-size: 18px; font-weight: 500; color: var(--text); margin-bottom: 0.5rem; }
+  .empty-state p  { font-size: 14px; line-height: 1.6; }
+
+  /* Suggestion chips */
+  .suggestions {
+    display: flex; flex-wrap: wrap; gap: 8px;
+    justify-content: center; margin-top: 1.25rem;
+  }
+  .chip {
+    padding: 6px 14px; border-radius: 20px; font-size: 13px;
+    border: 1px solid var(--border); background: var(--surface2);
+    color: var(--text); cursor: pointer; transition: all 0.15s;
+    font-family: inherit;
+  }
+  .chip:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* Messages */
+  .msg { display: flex; gap: 10px; max-width: 680px; }
+  .msg.user  { flex-direction: row-reverse; margin-left: auto; }
+  .msg.bot   { margin-right: auto; }
+
+  .avatar {
+    width: 30px; height: 30px; border-radius: 8px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; margin-top: 2px;
+  }
+  .msg.user .avatar { background: linear-gradient(135deg, #4f8ef7, #7c6af7); }
+  .msg.bot  .avatar { background: var(--surface2); border: 1px solid var(--border); }
+
+  .bubble {
+    padding: 10px 14px; border-radius: var(--radius);
+    font-size: 14px; line-height: 1.65; max-width: 560px;
+  }
+  .msg.user .bubble {
+    background: var(--user-bg); border: 1px solid rgba(79,142,247,0.2);
+    border-bottom-right-radius: 4px;
+  }
+  .msg.bot .bubble {
+    background: var(--bot-bg); border: 1px solid var(--border);
+    border-bottom-left-radius: 4px;
+  }
+
+  /* Typing indicator */
+  .typing { display: flex; align-items: center; gap: 5px; padding: 12px 14px; }
+  .typing span {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--muted); display: inline-block;
+    animation: bounce 1.2s infinite;
+  }
+  .typing span:nth-child(2) { animation-delay: 0.2s; }
+  .typing span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes bounce {
+    0%, 60%, 100% { transform: translateY(0); }
+    30%           { transform: translateY(-6px); }
+  }
+
+  /* Input area */
+  .input-area {
+    width: 100%; max-width: 760px;
+    padding: 1rem 1.5rem 1.5rem;
+    border-top: 1px solid var(--border);
+  }
+  .input-row {
+    display: flex; gap: 10px; align-items: flex-end;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 10px 12px;
+    transition: border-color 0.15s;
+  }
+  .input-row:focus-within { border-color: rgba(79,142,247,0.5); }
+
+  #msg-input {
+    flex: 1; background: none; border: none; outline: none;
+    color: var(--text); font-family: inherit; font-size: 14px;
+    line-height: 1.5; resize: none; max-height: 120px;
+    overflow-y: auto;
+  }
+  #msg-input::placeholder { color: var(--muted); }
+
+  #send-btn {
+    width: 34px; height: 34px; border-radius: 8px; border: none;
+    background: var(--accent); color: white; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; transition: opacity 0.15s; font-size: 15px;
+  }
+  #send-btn:hover   { opacity: 0.85; }
+  #send-btn:disabled { opacity: 0.4; cursor: default; }
+
+  .input-hint {
+    font-size: 11px; color: var(--muted);
+    margin-top: 6px; text-align: right;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 5px; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <div class="brand-icon">✈</div>
+    <div>
+      <div class="brand-name">Travel Assistant</div>
+      <div class="brand-sub">Powered by Gemini</div>
+    </div>
+  </div>
+  <button id="clear-btn" onclick="clearChat()">Clear chat</button>
+</header>
+
+<div id="chat-window">
+  <div class="empty-state" id="empty-state">
+    <div class="icon">✈️</div>
+    <h2>How can I help with your travels?</h2>
+    <p>Ask me about destinations, tips, itineraries,<br>or anything from the knowledge base.</p>
+    <div class="suggestions">
+      <button class="chip" onclick="sendChip(this)">Places to visit in Paris</button>
+      <button class="chip" onclick="sendChip(this)">Fun facts</button>
+      <button class="chip" onclick="sendChip(this)">Precautions and Safety</button>
+      <button class="chip" onclick="sendChip(this)">Flights</button>
+    </div>
+  </div>
+</div>
+
+<div class="input-area">
+  <div class="input-row">
+    <textarea id="msg-input" rows="1" placeholder="Ask anything about travel…"></textarea>
+    <button id="send-btn" onclick="sendMessage()">↑</button>
+  </div>
+  <div class="input-hint">Enter to send · Shift+Enter for new line</div>
+</div>
+
+<script>
+  const chatWindow = document.getElementById('chat-window');
+  const msgInput   = document.getElementById('msg-input');
+  const sendBtn    = document.getElementById('send-btn');
+
+  // Auto-resize textarea
+  msgInput.addEventListener('input', () => {
+    msgInput.style.height = 'auto';
+    msgInput.style.height = msgInput.scrollHeight + 'px';
+  });
+
+  // Enter = send, Shift+Enter = newline
+  msgInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  });
+
+  function sendChip(btn) {
+    msgInput.value = btn.textContent;
+    sendMessage();
+  }
+
+  function appendMessage(role, text) {
+    // Remove empty state on first message
+    const empty = document.getElementById('empty-state');
+    if (empty) empty.remove();
+
+    const avatarIcon = role === 'user' ? '👤' : '✈';
+    const div = document.createElement('div');
+    div.className = `msg ${role}`;
+    div.innerHTML = `
+      <div class="avatar">${avatarIcon}</div>
+      <div class="bubble">${escapeHtml(text)}</div>
+    `;
+    chatWindow.appendChild(div);
+    chatWindow.scrollTop = chatWindow.scrollHeight;
+    return div;
+  }
+
+  function showTyping() {
+    const empty = document.getElementById('empty-state');
+    if (empty) empty.remove();
+
+    const div = document.createElement('div');
+    div.className = 'msg bot';
+    div.id = 'typing-indicator';
+    div.innerHTML = `
+      <div class="avatar">✈</div>
+      <div class="bubble typing">
+        <span></span><span></span><span></span>
+      </div>`;
+    chatWindow.appendChild(div);
+    chatWindow.scrollTop = chatWindow.scrollHeight;
+  }
+
+  function removeTyping() {
+    const t = document.getElementById('typing-indicator');
+    if (t) t.remove();
+  }
+
+  function escapeHtml(text) {
+    return text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/\n/g, '<br>');
+  }
+
+  async function sendMessage() {
+    const text = msgInput.value.trim();
+    if (!text) return;
+
+    // Clear input
+    msgInput.value = '';
+    msgInput.style.height = 'auto';
+    sendBtn.disabled = true;
+
+    // Show user message + typing
+    appendMessage('user', text);
+    showTyping();
+
+    try {
+      // POST to Flask backend
+      const res  = await fetch('/chat', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ message: text }),
+      });
+      const data = await res.json();
+      removeTyping();
+
+      if (data.error) {
+        appendMessage('bot', 'Sorry, something went wrong: ' + data.error);
+      } else {
+        appendMessage('bot', data.reply);
+      }
+    } catch (err) {
+      removeTyping();
+      appendMessage('bot', 'Could not reach the server. Is app.py running?');
+    }
+
+    sendBtn.disabled = false;
+    msgInput.focus();
+  }
+
+  async function clearChat() {
+    await fetch('/clear', { method: 'POST' });
+    chatWindow.innerHTML = `
+      <div class="empty-state" id="empty-state">
+        <div class="icon">✈️</div>
+        <h2>How can I help with your travels?</h2>
+        <p>Ask me about destinations, tips, itineraries,<br>or anything from the knowledge base.</p>
+        <div class="suggestions">
+          <button class="chip" onclick="sendChip(this)">Best places to visit in Asia</button>
+          <button class="chip" onclick="sendChip(this)">Budget travel tips</button>
+          <button class="chip" onclick="sendChip(this)">What should I pack?</button>
+          <button class="chip" onclick="sendChip(this)">Visa requirements</button>
+        </div>
+      </div>`;
+  }
+</script>
+</body>
+</html>
