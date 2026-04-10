@@ -4,10 +4,10 @@ import os
 
 app = Flask(__name__)
 
-# ── Config ────────────────────────────────────────────────────────────────────
-API_KEY        = "AIzaSyCbtijgAii5RBCQ6fmWjucX6BR0zFu_CtE"
-MODEL_NAME     = "gemini-3.1-flash-lite-preview"
-KNOWLEDGE_FILE = "knowledgebase.txt"
+# # ── Config ────────────────────────────────────────────────────────────────────
+# API_KEY        = "AIzaSyCbtijgAii5RBCQ6fmWjucX6BR0zFu_CtE"
+# MODEL_NAME     = "gemini-3.1-flash-lite-preview"
+# KNOWLEDGE_FILE = "knowledgebase.txt"
 
 SYSTEM_PROMPT = """You are a helpful and professional travel assistant.
 Rules:
